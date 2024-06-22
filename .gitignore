@@ -12,6 +12,7 @@ __pycache__/
 
 # Ignore the file
 config_tg.py
+config.py
 
 # Ignore code-workspace files
 *.code-workspace
