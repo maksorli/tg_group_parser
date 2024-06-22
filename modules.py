@@ -1,78 +1,89 @@
 import pandas as pd
-from openpyxl.utils import get_column_letter #excel
+from openpyxl.utils import get_column_letter  # Excel
 import logging
 import asyncio
 from telethon import TelegramClient 
-import gspread #gsheets
-from oauth2client.service_account import ServiceAccountCredentials #gsheets
+import gspread  # Google Sheets
+from oauth2client.service_account import ServiceAccountCredentials  # Google Sheets
 
-# Настройка логгера
+# Logger setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def append_to_excel(filename: str, new_data_df: pd.DataFrame) -> None:
+    """
+    Append new data to an existing Excel file or create a new file if it doesn't exist.
 
+    Parameters:
+    filename (str): Path to the Excel file.
+    new_data_df (pd.DataFrame): DataFrame containing the new data to append.
 
-def append_to_excel(filename, new_data_df): #обновление файла XLS
-        # Настройка логгера
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__)
+    Returns:
+    None
+    """
     try:
-        # Загрузка существующего файла, если он существует
+        # Load existing file if it exists
         old_data_df = pd.read_excel(filename, index_col=None)
-        logger.info(f"Файл {filename} успешно загружен")
-        # Объединение старых данных с новыми
+        logger.info(f"File {filename} loaded successfully")
+        # Concatenate old data with new data
         updated_data_df = pd.concat([old_data_df, new_data_df], ignore_index=True)
     except FileNotFoundError:
-        # Если файл не существует, просто используем новые данные и создаем новый файл в этой же директории
+        # If file does not exist, use new data and create a new file in the same directory
         updated_data_df = new_data_df
-        logger.info(f"Файл {filename} не существует")
-    # Запись обновленных данных в файл
+        logger.info(f"File {filename} does not exist")
+    # Write updated data to the file
     with pd.ExcelWriter(filename, engine='openpyxl', mode='w') as writer:
         updated_data_df.to_excel(writer, index=False)
-        logger.info(f"Данные обновлены")
+        logger.info("Data updated")
 
-   
-def append_to_google_sheets(spreadsheet_id, worksheet_name, new_data_df):
+def append_to_google_sheets(spreadsheet_id: str, worksheet_name: str, new_data_df: pd.DataFrame) -> None:
+    """
+    Append new data to an existing Google Sheet or create a new worksheet if it doesn't exist.
+
+    Parameters:
+    spreadsheet_id (str): ID of the Google Spreadsheet.
+    worksheet_name (str): Name of the worksheet within the Google Spreadsheet.
+    new_data_df (pd.DataFrame): DataFrame containing the new data to append.
+
+    Returns:
+    None
+    """
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(r'C:\Users\maksim.evdokimov\Documents\!Dev\Telegram\google_auth.json', scope)
     client = gspread.authorize(creds)
     
     try:
-        # Открытие существующего Google Sheet
+        # Open existing Google Sheet
         sheet = client.open_by_key(spreadsheet_id)
         worksheet = sheet.worksheet(worksheet_name)
-        # Получение существующих данных как DataFrame
+        # Get existing data as DataFrame
         data = worksheet.get_all_values()
         headers = data.pop(0)
         old_data_df = pd.DataFrame(data, columns=headers)
-        # Объединение старых данных с новыми
+        # Concatenate old data with new data
         updated_data_df = pd.concat([old_data_df, new_data_df], ignore_index=True)
-        logger.info("Данные успешно загружены и объединены")
+        logger.info("Data loaded and combined successfully")
     except gspread.exceptions.WorksheetNotFound:
-        # Если лист не найден, создаем новый и используем новые данные
+        # If worksheet not found, create new and use new data
         worksheet = sheet.add_worksheet(title=worksheet_name, rows="1000", cols="20")
         updated_data_df = new_data_df
-        logger.info(f"Лист {worksheet_name} не существует, создан новый лист")
+        logger.info(f"Worksheet {worksheet_name} does not exist, new worksheet created")
     
-    # Очистка листа и запись обновленных данных
+    # Clear worksheet and write updated data
     worksheet.clear()
     worksheet.update([updated_data_df.columns.values.tolist()] + updated_data_df.values.tolist())
-    logger.info("Данные обновлены в Google Sheets")
+    logger.info("Data updated in Google Sheets")
 
-
-
-def generate_telegram_message_link(dialog_name, message_id): #кривые ссылки, разобраться
-
+def generate_telegram_message_link(dialog_name: str, message_id: int) -> str:
     """
-    Генерирует прямую ссылку на сообщение в Telegram.
+    Generate a direct link to a message in Telegram.
 
-    Параметры:
-    chat_id (int): ID чата, может быть отрицательным для супергрупп.
-    message_id (int): ID сообщения в чате.
+    Parameters:
+    dialog_name (str): Name of the dialog.
+    message_id (int): ID of the message in the chat.
 
-    Возвращает:
-    str: URL-адрес сообщения в Telegram.
+    Returns:
+    str: URL of the message in Telegram.
     """
-    #return f"https://t.me/c/{abs(chat_id)}/{message_id}"
     return f"https://t.me/{dialog_name}/{message_id}"
