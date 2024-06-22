@@ -1,14 +1,20 @@
-# Игнорирование папок __pycache__ во всех поддиректориях
+# Ignore __pycache__ folders in all subdirectories
 __pycache__/
 
-# Игнорирование всех .pyc файлов
+# Ignore all .pyc files
 *.pyc
 
-# Игнорирование фалов сессий
+# Ignore session files
 *.session
 
-# Игнорирование фалов результата
+# Ignore result files
 *.xlsx
 
-# Игнорирование файла 
+# Ignore the file
 config_tg.py
+
+# Ignore code-workspace files
+*.code-workspace
+
+# Ignore venv
+tg_guop_parser_venv/
