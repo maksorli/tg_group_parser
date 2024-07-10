@@ -9,7 +9,9 @@ __pycache__/
 
 # Ignore result files
 *.xlsx
-
+*.csv
+*.ipynb
+*.txt
 # Ignore the file
 config_tg.py
 config.py
